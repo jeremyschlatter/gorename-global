@@ -52,6 +52,10 @@ func main() {
 }
 
 func renameIn(pkgPath string) error {
+	printerConf := printer.Config{
+		Mode:     printer.UseSpaces | printer.TabIndent,
+		Tabwidth: 8,
+	}
 	pkg, err := build.Import(pkgPath, ".", 0)
 	if err != nil {
 		return err
@@ -83,7 +87,7 @@ func renameIn(pkgPath string) error {
 				return err
 			}
 			defer wc.Close()
-			return printer.Fprint(wc, fset, f)
+			return printerConf.Fprint(wc, fset, f)
 		})
 	}
 	return wg.Err()
