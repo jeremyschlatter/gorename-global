@@ -18,21 +18,26 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"go4.org/syncutil"
 
 	"github.com/kisielk/gotool"
+	"github.com/serenize/snaker"
 )
 
 var (
 	from = flag.String("from", "", "the current name")
 	to   = flag.String("to", "", "the new name")
+	auto = flag.Bool("auto", false, "automatically change ALL_CAPS to CamelCase")
 )
 
 func main() {
 	flag.Parse()
-	if *from == "" || *to == "" {
-		fmt.Fprintf(os.Stderr, "Usage: %s -from <name> -to <name> [pkg...]\n", os.Args[0])
+	if *auto && (*from != "" || *to != "") ||
+		!*auto && (*from == "" || *to == "") {
+		fmt.Fprintf(os.Stderr, "Usage: %s [-from <name> -to <name>] [-auto] [pkg...]\n", os.Args[0])
 		os.Exit(1)
 	}
 	paths := gotool.ImportPaths(flag.Args())
@@ -72,7 +77,13 @@ func renameIn(pkgPath string) error {
 			changed := false
 			ast.Inspect(f, func(node ast.Node) bool {
 				if i, ok := node.(*ast.Ident); ok {
-					if i.Name == *from {
+					if *auto {
+						n := autoFix(i.Name)
+						if n != i.Name {
+							changed = true
+							i.Name = n
+						}
+					} else if i.Name == *from {
 						changed = true
 						i.Name = *to
 					}
@@ -91,4 +102,16 @@ func renameIn(pkgPath string) error {
 		})
 	}
 	return wg.Err()
+}
+
+var (
+	allCapsRE   = regexp.MustCompile(`^[A-Z0-9_]+$`)
+	allUndersRE = regexp.MustCompile(`^_+$`)
+)
+
+func autoFix(name string) string {
+	if allCapsRE.MatchString(name) && !allUndersRE.MatchString(name) && strings.Contains(name, "_") {
+		return snaker.SnakeToCamel(strings.ToLower(name))
+	}
+	return name
 }
