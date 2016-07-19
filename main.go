@@ -82,7 +82,10 @@ func renameIn(pkgPath string) error {
 	}
 	var wg syncutil.Group
 
-	for _, path := range pkg.GoFiles {
+	files := append(pkg.GoFiles, pkg.TestGoFiles...)
+	files = append(files, pkg.XTestGoFiles...)
+
+	for _, path := range files {
 		path := filepath.Join(pkg.Dir, path)
 		wg.Go(func() error {
 			fset := token.NewFileSet()
