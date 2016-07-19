@@ -5,7 +5,9 @@
 // the rename is safe.
 //
 // It is still safer than using sed, though. It will only replace Go identifiers that
-// exactly match the -from argument.
+// exactly match the --from argument.
+//
+// You can use the --auto flag to fix any identifier that 'go lint' would flag.
 package main
 
 import (
@@ -30,7 +32,7 @@ import (
 var (
 	from = flag.String("from", "", "the current name")
 	to   = flag.String("to", "", "the new name")
-	auto = flag.Bool("auto", false, "automatically change ALL_CAPS to CamelCase")
+	auto = flag.Bool("auto", false, "automatically change any identifier flagged by 'go lint'")
 )
 
 var changeLog = struct {
